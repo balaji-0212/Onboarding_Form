@@ -299,9 +299,9 @@
                     </div>
                 </div>
 
-                <div class="field-group" style="margin-top: 10px;">
-                    <fieldset style="border: none; padding: 0; margin: 0;">
-                        <legend style="font-size: 0.875rem; font-weight: 600; color: #333; text-transform: none; letter-spacing: 0; padding: 0 0 6px 0;">
+                <div class="field-group inner-group">
+                    <fieldset class="inner-fieldset">
+                        <legend class="inner-legend">
                             Employment Type <span class="required-mark" aria-hidden="true">*</span>
                         </legend>
                         <div class="radio-group" aria-describedby="employmentType-help">
@@ -322,7 +322,7 @@
                                 Intern
                             </label>
                         </div>
-                        <p id="employmentType-help" class="help-text" style="margin-top: 4px;">Select the employment type as stated in your offer letter.</p>
+                        <p id="employmentType-help" class="help-text help-text-tight">Select the employment type as stated in your offer letter.</p>
                     </fieldset>
                 </div>
 
@@ -547,12 +547,12 @@
                     </div>
                 </div>
 
-                <div class="field-group" style="margin-top: 12px;">
-                    <fieldset style="border: none; padding: 0; margin: 0;">
-                        <legend style="font-size: 0.875rem; font-weight: 600; color: #333; text-transform: none; letter-spacing: 0; padding: 0 0 6px 0;">
+                <div class="field-group inner-group">
+                    <fieldset class="inner-fieldset">
+                        <legend class="inner-legend">
                             Required System Access <span class="required-mark" aria-hidden="true">*</span>
                         </legend>
-                        <p class="help-text" style="margin-bottom: 8px;" id="systemAccess-help">Select all systems you require access to. At least one selection is required.</p>
+                        <p class="help-text help-text-spaced" id="systemAccess-help">Select all systems you require access to. At least one selection is required.</p>
                         <div class="checkbox-group" aria-describedby="systemAccess-help">
                             <label>
                                 <input type="checkbox" name="systemAccess" value="email">
@@ -586,7 +586,7 @@
                     </fieldset>
                 </div>
 
-                <div class="field-row single" style="margin-top: 16px;">
+                <div class="field-row single row-spaced">
                     <div class="field-group">
                         <label for="additionalAccessRequirements">Additional Access Requirements</label>
                         <textarea
@@ -638,9 +638,9 @@
                     </div>
                 </div>
 
-                <div class="field-group" style="margin-top: 16px; padding: 14px; border: 1px solid #c0c8d4; border-radius: 4px; background-color: #f9f9fb;">
-                    <p style="font-size: 0.875rem; font-weight: 600; margin-bottom: 10px; color: #1a3a5c;">Terms &amp; Conditions</p>
-                    <p style="font-size: 0.82rem; color: #444; margin-bottom: 10px; line-height: 1.5;">
+                <div class="field-group terms-container">
+                    <p class="terms-heading">Terms &amp; Conditions</p>
+                    <p class="terms-text">
                         By submitting this form, you confirm that all information provided is accurate and complete to the best of your knowledge.
                         You agree to comply with Stackly's internal policies, code of conduct, and data privacy guidelines as communicated during onboarding.
                         Providing false information may result in disciplinary action.
@@ -659,9 +659,9 @@
                             I have read and agree to the Terms &amp; Conditions. <span class="required-mark" aria-hidden="true">*</span>
                         </label>
                     </div>
-                    <p id="termsAndConditions-help" class="help-text" style="margin-top: 6px;">You must accept the terms and conditions before submitting the form.</p>
+                    <p id="termsAndConditions-help" class="help-text help-text-tight">You must accept the terms and conditions before submitting the form.</p>
 
-                    <div class="confirm-row" style="margin-top: 10px;">
+                    <div class="confirm-row confirm-row-spaced">
                         <input
                             type="checkbox"
                             id="informationAccurate"
@@ -674,7 +674,7 @@
                             I confirm that all information provided in this form is accurate and complete. <span class="required-mark" aria-hidden="true">*</span>
                         </label>
                     </div>
-                    <p id="informationAccurate-help" class="help-text" style="margin-top: 6px;">This declaration is required before your application can be processed.</p>
+                    <p id="informationAccurate-help" class="help-text help-text-tight">This declaration is required before your application can be processed.</p>
                 </div>
 
             </fieldset>
