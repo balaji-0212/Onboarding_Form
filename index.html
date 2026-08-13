@@ -14,7 +14,12 @@
     </header>
 
     <main>
-        <form action="#" method="post" novalidate enctype="multipart/form-data">
+        <div id="formSuccessMessage" class="success-message" style="display: none; padding: 20px; background-color: var(--color-success-bg); border: 1px solid var(--color-success); border-radius: 6px; margin-bottom: 20px;">
+            <h2 style="color: var(--color-success); margin-bottom: 8px;">Application Submitted Successfully!</h2>
+            <p style="color: #2e7d32;">Thank you for completing the onboarding form. HR will review your submission and contact you shortly.</p>
+        </div>
+
+        <form action="#" method="post" novalidate enctype="multipart/form-data" id="onboardingForm">
             <fieldset>
                 <legend>Personal Information</legend>
 
@@ -364,55 +369,63 @@
                     </div>
                 </div>
 
-                <div class="field-row">
-                    <div class="field-group">
-                        <label for="emergencyContactName">Emergency Contact Name <span class="required-mark" aria-hidden="true">*</span></label>
-                        <input
-                            type="text"
-                            id="emergencyContactName"
-                            name="emergencyContactName"
-                            required
-                            minlength="3"
-                            maxlength="100"
-                            autocomplete="off"
-                            placeholder="Full name of your emergency contact"
-                            aria-describedby="emergencyContactName-help"
-                        >
-                        <p id="emergencyContactName-help" class="help-text">Enter the full name of a person we can contact in an emergency.</p>
-                    </div>
+                <div id="emergencyContactsContainer">
+                    <div class="emergency-contact-group" data-index="0">
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label for="emergencyContactName_0">Emergency Contact Name <span class="required-mark" aria-hidden="true">*</span></label>
+                                <input
+                                    type="text"
+                                    id="emergencyContactName_0"
+                                    name="emergencyContactName_0"
+                                    required
+                                    minlength="3"
+                                    maxlength="100"
+                                    autocomplete="off"
+                                    placeholder="Full name of your emergency contact"
+                                    aria-describedby="emergencyContactName-help_0"
+                                >
+                                <p id="emergencyContactName-help_0" class="help-text">Enter the full name of a person we can contact in an emergency.</p>
+                            </div>
 
-                    <div class="field-group">
-                        <label for="emergencyContactNumber">Emergency Contact Number <span class="required-mark" aria-hidden="true">*</span></label>
-                        <input
-                            type="tel"
-                            id="emergencyContactNumber"
-                            name="emergencyContactNumber"
-                            required
-                            pattern="[6-9][0-9]{9}"
-                            maxlength="10"
-                            inputmode="numeric"
-                            autocomplete="off"
-                            placeholder="e.g. 9876543210"
-                            aria-describedby="emergencyContactNumber-help"
-                        >
-                        <p id="emergencyContactNumber-help" class="help-text">10-digit Indian mobile number of your emergency contact.</p>
+                            <div class="field-group">
+                                <label for="emergencyContactNumber_0">Emergency Contact Number <span class="required-mark" aria-hidden="true">*</span></label>
+                                <input
+                                    type="tel"
+                                    id="emergencyContactNumber_0"
+                                    name="emergencyContactNumber_0"
+                                    required
+                                    pattern="[6-9][0-9]{9}"
+                                    maxlength="10"
+                                    inputmode="numeric"
+                                    autocomplete="off"
+                                    placeholder="e.g. 9876543210"
+                                    aria-describedby="emergencyContactNumber-help_0"
+                                >
+                                <p id="emergencyContactNumber-help_0" class="help-text">10-digit Indian mobile number of your emergency contact.</p>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label for="emergencyRelationship_0">Relationship with Emergency Contact <span class="required-mark" aria-hidden="true">*</span></label>
+                                <select id="emergencyRelationship_0" name="emergencyRelationship_0" required aria-describedby="emergencyRelationship-help_0">
+                                    <option value="">Select Relationship</option>
+                                    <option value="parent">Parent</option>
+                                    <option value="spouse">Spouse</option>
+                                    <option value="sibling">Sibling</option>
+                                    <option value="friend">Friend</option>
+                                    <option value="guardian">Guardian</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <p id="emergencyRelationship-help_0" class="help-text">Select your relationship with the emergency contact person.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="field-row">
-                    <div class="field-group">
-                        <label for="emergencyRelationship">Relationship with Emergency Contact <span class="required-mark" aria-hidden="true">*</span></label>
-                        <select id="emergencyRelationship" name="emergencyRelationship" required aria-describedby="emergencyRelationship-help">
-                            <option value="">Select Relationship</option>
-                            <option value="parent">Parent</option>
-                            <option value="spouse">Spouse</option>
-                            <option value="sibling">Sibling</option>
-                            <option value="friend">Friend</option>
-                            <option value="guardian">Guardian</option>
-                            <option value="other">Other</option>
-                        </select>
-                        <p id="emergencyRelationship-help" class="help-text">Select your relationship with the emergency contact person.</p>
-                    </div>
+                <div class="field-row single row-spaced">
+                    <button type="button" id="addContactBtn" style="width: auto; align-self: flex-start; background-color: transparent; border: 1px solid var(--color-primary); color: var(--color-primary);">+ Add Another Emergency Contact</button>
                 </div>
 
             </fieldset>
@@ -680,8 +693,10 @@
             </fieldset>
 
             <div class="form-actions">
-                <button type="submit">Submit Application</button>
-                <button type="reset">Reset Form</button>
+                <button type="submit" id="submitBtn">Submit Application</button>
+                <button type="button" id="saveDraftBtn" style="background-color: var(--color-surface); color: var(--color-primary); border: 1px solid var(--color-primary);">Save Draft</button>
+                <button type="button" id="clearDraftBtn" style="background-color: transparent; color: var(--color-error); border: 1px solid var(--color-error); margin-left: auto;">Clear Draft</button>
+                <button type="reset" id="resetBtn">Reset Form</button>
             </div>
 
         </form>
@@ -691,5 +706,6 @@
         <p>&copy; 2025 Stackly. All rights reserved. &mdash; This form is for internal use only.</p>
     </footer>
 
+    <script src="script.js"></script>
 </body>
 </html>
