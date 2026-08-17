@@ -7,6 +7,7 @@ import ProfessionalInformation from './steps/ProfessionalInformation';
 import SystemAccess from './steps/SystemAccess';
 import DocumentsConfirmation from './steps/DocumentsConfirmation';
 import ReviewScreen from './ReviewScreen';
+import ValidationSummary from './ValidationSummary';
 
 function OnboardingForm() {
   const TOTAL_STEPS = 7;
@@ -15,6 +16,11 @@ function OnboardingForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
   const formRef = useRef(null);
+
+  // New states for form persistence and validation
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
+  const [validationErrors, setValidationErrors] = useState([]);
 
   const [formData, setFormData] = useState({
     // Personal Information
@@ -57,7 +63,7 @@ function OnboardingForm() {
     additionalAccessRequirements: '',
 
     // Documents & Confirmation
-    resume: null, // File inputs are usually uncontrolled, but we track existence
+    resume: null,
     joiningDocuments: null,
     termsAndConditions: false,
     informationAccurate: false,
@@ -69,7 +75,6 @@ function OnboardingForm() {
     if (savedDraft) {
       try {
         const parsedDraft = JSON.parse(savedDraft);
-        // Ensure emergencyContacts have valid IDs if missing (just in case)
         if (parsedDraft.emergencyContacts && Array.isArray(parsedDraft.emergencyContacts)) {
           parsedDraft.emergencyContacts = parsedDraft.emergencyContacts.map(c => ({
             ...c,
@@ -77,30 +82,73 @@ function OnboardingForm() {
           }));
         }
         
-        // Restore step if it was saved (optional, keeping user at step 1 is often safer for validation)
-        // We will just restore data
         setFormData(prev => ({ ...prev, ...parsedDraft }));
+        // Note: We intentionally do NOT set isDirty to true here. 
+        // Initial load should be considered clean.
       } catch (e) {
         console.error("Failed to parse draft from localStorage", e);
       }
     }
   }, []);
 
+  // Autosave with debounce
+  useEffect(() => {
+    if (!isDirty) return;
+
+    setSaveStatus('Saving...');
+    const timer = setTimeout(() => {
+      try {
+        const draftData = { ...formData };
+        delete draftData.resume;
+        delete draftData.joiningDocuments;
+        
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(draftData));
+        setSaveStatus('Saved');
+        setIsDirty(false);
+      } catch (e) {
+        console.error("Autosave failed", e);
+        setSaveStatus('Unable to save');
+      }
+    }, 1000); // 1-second debounce
+
+    return () => clearTimeout(timer);
+  }, [formData, isDirty]);
+
+  // Unsaved-change warning (beforeunload)
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  // Helper to mark form as dirty and clear validation errors
+  const markDirty = () => {
+    setIsDirty(true);
+    setSaveStatus('Unsaved');
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+  };
+
   const handleChange = (e) => {
+    markDirty();
     const { name, value, type, checked, files } = e.target;
     
     if (type === 'checkbox') {
-      // Handle single boolean checkboxes (Terms)
       if (name === 'termsAndConditions' || name === 'informationAccurate') {
         setFormData(prev => ({ ...prev, [name]: checked }));
       }
     } else if (type === 'file') {
-      // Store file objects if needed, but they won't serialize to localStorage
       setFormData(prev => ({ ...prev, [name]: files[0] || null }));
     } else {
       setFormData(prev => {
         const newData = { ...prev, [name]: value };
-        // If department changes, clear designation
         if (name === 'department' && value !== prev.department) {
           newData.designation = '';
         }
@@ -110,6 +158,7 @@ function OnboardingForm() {
   };
 
   const handleCheckboxChange = (e) => {
+    markDirty();
     const { name, value, checked } = e.target;
     if (name === 'systemAccess') {
       setFormData(prev => {
@@ -125,8 +174,8 @@ function OnboardingForm() {
     }
   };
 
-  // Emergency Contacts Logic
   const addEmergencyContact = () => {
+    markDirty();
     setFormData(prev => ({
       ...prev,
       emergencyContacts: [
@@ -137,6 +186,7 @@ function OnboardingForm() {
   };
 
   const removeEmergencyContact = (id) => {
+    markDirty();
     setFormData(prev => ({
       ...prev,
       emergencyContacts: prev.emergencyContacts.filter(c => c.id !== id)
@@ -144,6 +194,7 @@ function OnboardingForm() {
   };
 
   const handleContactChange = (id, e) => {
+    markDirty();
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -153,14 +204,46 @@ function OnboardingForm() {
     }));
   };
 
-  // Navigation & Validation
   const validateCurrentStep = () => {
     if (formRef.current) {
       const isValid = formRef.current.checkValidity();
       if (!isValid) {
-        formRef.current.reportValidity();
+        // Collect human-readable validation errors
+        const errors = [];
+        const elements = formRef.current.elements;
+        
+        for (let i = 0; i < elements.length; i++) {
+          const el = elements[i];
+          if (el.validity && !el.validity.valid) {
+            let fieldName = el.name || el.id;
+            // Attempt to find the associated label to get a readable name
+            if (el.id) {
+              const label = formRef.current.querySelector(`label[for="${el.id}"]`);
+              if (label) {
+                // Remove the * visually hidden span text if present
+                fieldName = label.innerText.replace('*', '').trim();
+              }
+            } else if (el.closest('.inner-fieldset')) {
+              const legend = el.closest('.inner-fieldset').querySelector('legend');
+              if (legend) {
+                fieldName = legend.innerText.replace('*', '').trim();
+              }
+            }
+            
+            // Only add unique errors (radio/checkbox groups might have multiple invalid elements but share the same label)
+            const errorMsg = `${fieldName} is required or invalid.`;
+            if (!errors.includes(errorMsg)) {
+              errors.push(errorMsg);
+            }
+          }
+        }
+        
+        setValidationErrors(errors);
+        formRef.current.reportValidity(); // Optional: keeps native tooltips
         return false;
       }
+      
+      setValidationErrors([]);
       return true;
     }
     return false;
@@ -173,17 +256,25 @@ function OnboardingForm() {
   };
 
   const handleBack = () => {
+    setValidationErrors([]);
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
   const saveDraft = () => {
-    // Exclude file objects from localStorage stringification
     const draftData = { ...formData };
     delete draftData.resume;
     delete draftData.joiningDocuments;
     
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(draftData));
-    alert('Draft saved successfully!');
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(draftData));
+      setSaveStatus('Saved');
+      setIsDirty(false);
+      alert('Draft saved successfully!');
+    } catch (e) {
+      console.error("Failed to save draft", e);
+      setSaveStatus('Unable to save');
+      alert('Failed to save draft.');
+    }
   };
 
   const clearDraft = () => {
@@ -194,9 +285,9 @@ function OnboardingForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateCurrentStep()) {
-      // Process submission
       setIsSuccess(true);
-      localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear draft on success
+      setIsDirty(false); // form submitted, no longer dirty
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
     }
   };
 
@@ -209,7 +300,6 @@ function OnboardingForm() {
     );
   }
 
-  // Render Current Step Component
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -241,6 +331,8 @@ function OnboardingForm() {
     <form ref={formRef} action="#" method="post" noValidate onSubmit={handleSubmit} id="onboardingForm">
       <StepIndicator currentStep={currentStep} totalSteps={TOTAL_STEPS} />
       
+      <ValidationSummary errors={validationErrors} />
+      
       {renderStep()}
 
       <div className="form-actions" style={{ marginTop: '32px' }}>
@@ -256,7 +348,12 @@ function OnboardingForm() {
           <button type="submit" id="submitBtn">Submit Application</button>
         )}
         
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '16px' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {saveStatus && (
+            <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', fontWeight: '600' }}>
+              {saveStatus}
+            </span>
+          )}
           <button type="button" onClick={saveDraft} id="saveDraftBtn" style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-primary)', border: '1px solid var(--color-primary)' }}>
             Save Draft
           </button>
